@@ -1,0 +1,23 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  ai:
+    dashscope:
+      api-key: test-api-key
+    vectorstore:
+      elasticsearch:
+        index-name: code_vectors_test
+
+codeinsight:
+  repo:
+    base-path: ./target/test-repos
+  jwt:
+    secret: test-secret-key-must-be-at-least-256-bits-long-for-hmac-sha256-algorithm
+    expiration-ms: 3600000
+
+logging:
+  level:
+    com.codeinsight: DEBUG

@@ -1,0 +1,31 @@
+# Build output
+target/
+build/
+
+# IDE
+.idea/
+*.iml
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Data
+data/
+
+# Environment
+.env
+*.env.local
+
+# Dependencies
+node_modules/

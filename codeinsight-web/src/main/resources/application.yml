@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: codeinsight-agent
+  profiles:
+    active: dev
+  threads:
+    virtual:
+      enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/codeinsight
+    username: codeinsight
+    password: ${DB_PASSWORD:codeinsight_dev}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: public
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  elasticsearch:
+    uris: http://localhost:9200
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:sk-placeholder}
+    vectorstore:
+      elasticsearch:
+        index-name: code_vectors
+        dimensions: 1024
+        similarity: cosine
+
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+codeinsight:
+  repo:
+    base-path: ./data/repos
+  jwt:
+    secret: ${JWT_SECRET:codeinsight-dev-secret-key-must-be-at-least-256-bits-long-for-security}
+    expiration-ms: 86400000
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  endpoint:
+    health:
+      show-details: always
