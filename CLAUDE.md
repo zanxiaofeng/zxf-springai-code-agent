@@ -122,9 +122,59 @@ npm run ui:build                                   # Root shortcut
 - SSE streaming via `fetch` + `ReadableStream` (not EventSource)
 - API proxy: Vite proxies `/api` → `http://localhost:8080` in dev
 
+## Observability
+
+### Metrics (Micrometer + Prometheus)
+- `AgentMetrics` (`codeinsight-web/.../metrics/AgentMetrics.java`):
+  - `codeinsight.chat.requests` — counter by scenario
+  - `codeinsight.chat.errors` — counter by scenario + error type
+  - `codeinsight.model.call.duration` — timer by model
+  - `codeinsight.ai.tokens` — counter by type (prompt/completion)
+  - `codeinsight.indexing.active` — gauge of active tasks
+  - `codeinsight.indexing.duration` — timer
+- Spring Boot Actuator: `/actuator/health`, `/actuator/prometheus`, `/actuator/metrics`
+- Health checks enabled for PostgreSQL, Elasticsearch, Redis
+
+### Request Tracing
+- `RequestCorrelationFilter` (`codeinsight-web/.../filter/`): injects `traceId`, `httpMethod`, `httpUri` into MDC; returns `X-Trace-Id` header
+- Structured JSON logging in production via Logstash encoder (logback-spring.xml)
+
+### Alerting (Prometheus)
+- `deploy/prometheus/alert-rules.yml` — 8 rules:
+  - `HighErrorRate` (5xx > 5%), `HighResponseLatency` (P95 > 5s)
+  - `AIModelCallSlow` (P95 > 30s), `IndexingTaskStuck` (30min no change)
+  - `JVMHeapPressure` (> 85%), `JVMHeapCritical` (> 95%)
+  - `DatabaseConnectionPoolExhausted` (pending > 5), `ServiceDown`
+
+### Grafana Dashboard
+- `deploy/grafana/dashboards/codeinsight-overview.json` — pre-provisioned dashboard:
+  - Chat request rate, AI model latency (P50/P95), token usage
+  - Active indexing, indexing duration, JVM heap, HTTP rates, HikariCP pool
+- Auto-provisioned Prometheus datasource via `deploy/grafana/provisioning/`
+
 ## Infrastructure
 
+### Docker Compose Services
 ```bash
-docker compose -f deploy/docker/docker-compose.dev.yml up -d  # Dev infra
-docker compose -f deploy/docker/docker-compose.yml up -d      # Production
+docker compose -f deploy/docker/docker-compose.dev.yml up -d  # Dev (PG, ES, Redis)
+docker compose -f deploy/docker/docker-compose.yml up -d      # Production (all services)
 ```
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `app` | 8080 | Spring Boot backend |
+| `postgres` | 5432 | PostgreSQL 16 |
+| `elasticsearch` | 9200 | Elasticsearch 8.15 |
+| `redis` | 6379 | Redis 7.4 |
+| `prometheus` | 9090 | Metrics + alerting |
+| `grafana` | 3000 | Dashboards (admin/`$GRAFANA_PASSWORD`) |
+| `nginx` | 80 | Reverse proxy (API + frontend SPA) |
+
+### Nginx (`deploy/nginx/`)
+- `/api/` → proxy to backend with SSE support (`proxy_buffering off`)
+- `/` → frontend static files (mount `codeinsight-ui/dist/` in production)
+- `/actuator/`, `/swagger-ui/`, `/v3/api-docs` → proxy to backend
+
+### Dockerfile (`deploy/docker/Dockerfile`)
+- Multi-stage: Maven build with dependency caching → JRE Alpine runtime
+- Non-root `app` user, ZGC, health check via `/actuator/health`
