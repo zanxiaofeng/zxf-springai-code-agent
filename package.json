@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "scripts": {
+    "ui:dev": "cd codeinsight-ui && npm run dev",
+    "ui:build": "cd codeinsight-ui && npm run build",
+    "ui:install": "cd codeinsight-ui && npm install"
+  }
+}

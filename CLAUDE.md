@@ -16,6 +16,7 @@ codeinsight-agent-core → Spring AI agents, tools, orchestrator
 codeinsight-security  → JWT (JJWT), Spring Security
 codeinsight-service   → Business services
 codeinsight-web       → Controllers, startup, config
+codeinsight-ui/       → Vue 3 frontend (see Frontend section below)
 ```
 
 ## Code Style Rules
@@ -77,6 +78,49 @@ JAVA_HOME=/home/davis/.jdks/ms-21.0.10 mvn clean verify      # Full build + cove
 - Unit tests: `codeinsight-parser`, `codeinsight-security` modules
 - E2E tests: `codeinsight-web` (requires Docker for Testcontainers)
 - JaCoCo enforces 80% line coverage at verify phase
+
+## Frontend (codeinsight-ui)
+
+Vue 3 + Vite + Element Plus + TypeScript SPA.
+
+### Tech Stack
+- Vue 3.5+ (Composition API, `<script setup>`)
+- Vite 7.x, TypeScript 5.x
+- Element Plus 2.x (auto-import via unplugin)
+- Vue Router 4.x, Pinia 2.x, Axios 1.x
+- markdown-it for AI response rendering
+
+### Directory Structure
+```
+codeinsight-ui/src/
+├── api/          # Axios instance + API modules (auth, project, chat, conversation, task)
+├── components/   # ChatMessage, ChatInput
+├── composables/  # useDark (theme toggle)
+├── layouts/      # AuthLayout (login), DefaultLayout (sidebar + header)
+├── router/       # Routes + auth guard
+├── stores/       # Pinia auth store (JWT + localStorage)
+├── types/        # TypeScript interfaces matching backend DTOs
+├── views/        # LoginView, ProjectListView, ProjectDetailView, ChatView
+├── styles/       # Global CSS + dark theme
+├── App.vue
+└── main.ts
+```
+
+### Frontend Build Commands
+```bash
+cd codeinsight-ui && npm install && npm run dev   # Dev server on :5173
+cd codeinsight-ui && npm run build                # Production build
+npm run ui:dev                                     # Root shortcut
+npm run ui:build                                   # Root shortcut
+```
+
+### Frontend Code Style
+- Composition API with `<script setup>` only — no Options API
+- TypeScript strict mode; all API responses typed via `src/types/api.ts`
+- Element Plus components via auto-import (no manual imports needed)
+- Pinia stores use setup syntax (`defineStore` with function)
+- SSE streaming via `fetch` + `ReadableStream` (not EventSource)
+- API proxy: Vite proxies `/api` → `http://localhost:8080` in dev
 
 ## Infrastructure
 
