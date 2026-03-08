@@ -68,3 +68,10 @@ management:
   endpoint:
     health:
       show-details: always
+  health:
+    elasticsearch:
+      enabled: true
+    redis:
+      enabled: true
+    db:
+      enabled: true

@@ -1,0 +1,92 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: codeinsight-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/codeinsight
+      SPRING_DATASOURCE_USERNAME: codeinsight
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:codeinsight_prod}
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_AI_DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JAVA_OPTS: "-Xms1g -Xmx4g -XX:+UseZGC"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - repo-data:/data/repos
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: codeinsight-postgres
+    environment:
+      POSTGRES_DB: codeinsight
+      POSTGRES_USER: codeinsight
+      POSTGRES_PASSWORD: ${DB_PASSWORD:codeinsight_prod}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codeinsight"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: codeinsight-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: codeinsight-redis
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: codeinsight-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - app
+
+volumes:
+  pg-data:
+  es-data:
+  redis-data:
+  repo-data:

@@ -60,6 +60,7 @@ public class ProjectController {
 
     @PostMapping("/{id}/index")
     public ApiResponse<TaskResponse> triggerIndex(@PathVariable String id) {
+        projectService.updateIndexStatus(id, com.codeinsight.model.enums.IndexStatus.INDEXING);
         AsyncTask task = asyncTaskService.createTask(id, TaskType.INDEX_FULL);
         indexingTaskProducer.submitIndexTask(task.getId(), id, TaskType.INDEX_FULL);
         return ApiResponse.ok(asyncTaskService.getTask(task.getId()));
