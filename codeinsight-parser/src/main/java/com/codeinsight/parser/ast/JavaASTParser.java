@@ -27,8 +27,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class JavaASTParser {
 
-    private final JavaParser parser = new JavaParser();
-
     public Optional<ParsedClass> parse(Path filePath) {
         try {
             return parse(filePath.toString(), Files.readString(filePath));
@@ -39,6 +37,7 @@ public class JavaASTParser {
     }
 
     public Optional<ParsedClass> parse(String filePath, String source) {
+        var parser = new JavaParser(); // new instance per call — JavaParser is not thread-safe
         ParseResult<CompilationUnit> result = parser.parse(source);
         if (!result.isSuccessful() || result.getResult().isEmpty()) {
             log.warn("Failed to parse: {}", filePath);

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import MarkdownIt from 'markdown-it'
+import DOMPurify from 'dompurify'
 import type { MessageRole } from '@/types/api'
 
 const props = defineProps<{
@@ -9,14 +10,13 @@ const props = defineProps<{
   createdAt?: string
 }>()
 
-const md = new MarkdownIt({
-  html: false,
-  linkify: true,
-  breaks: true,
-})
+// Shared instance at module scope — avoids per-component allocation
+const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
 
 const renderedContent = computed(() =>
-  props.role === 'ASSISTANT' ? md.render(props.content) : props.content,
+  props.role === 'ASSISTANT'
+    ? DOMPurify.sanitize(md.render(props.content))
+    : props.content,
 )
 
 const isUser = computed(() => props.role === 'USER')

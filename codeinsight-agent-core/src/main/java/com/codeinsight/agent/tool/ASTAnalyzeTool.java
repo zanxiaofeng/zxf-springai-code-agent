@@ -32,7 +32,7 @@ public class ASTAnalyzeTool {
             @ToolParam(description = "Qualified class name, e.g. com.example.OrderService") String qualifiedClassName,
             @ToolParam(description = "Project ID") String projectId) {
 
-        Path projectPath = Path.of(basePath, projectId);
+        Path projectPath = resolveProjectPath(projectId);
         String relativePath = qualifiedClassName.replace('.', '/') + ".java";
 
         List<Path> candidates = scanProject(projectPath).stream()
@@ -57,7 +57,7 @@ public class ASTAnalyzeTool {
             @ToolParam(description = "Qualified class name") String qualifiedClassName,
             @ToolParam(description = "Project ID") String projectId) {
 
-        Path projectPath = Path.of(basePath, projectId);
+        Path projectPath = resolveProjectPath(projectId);
         String relativePath = qualifiedClassName.replace('.', '/') + ".java";
 
         List<Path> candidates = scanProject(projectPath).stream()
@@ -109,6 +109,14 @@ public class ASTAnalyzeTool {
                         .append("]\n"));
 
         return sb.toString();
+    }
+
+    private Path resolveProjectPath(String projectId) {
+        var resolved = Path.of(basePath, projectId).normalize();
+        if (!resolved.startsWith(Path.of(basePath).normalize())) {
+            throw new IllegalArgumentException("Invalid project ID: " + projectId);
+        }
+        return resolved;
     }
 
     private List<Path> scanProject(Path projectPath) {

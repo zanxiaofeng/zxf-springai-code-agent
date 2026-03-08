@@ -2,14 +2,13 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useDark, useToggle } from '@/composables/useDark'
+import { useDark } from '@/composables/useDark'
 
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const isCollapsed = ref(false)
-const isDark = useDark()
-const toggleDark = useToggle(isDark)
+const { isDark, toggle: toggleDark } = useDark()
 
 const activeMenu = computed(() => {
   if (route.path.startsWith('/chat')) return '/chat'

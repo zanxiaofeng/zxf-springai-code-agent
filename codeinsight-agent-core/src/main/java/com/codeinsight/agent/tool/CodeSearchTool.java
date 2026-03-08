@@ -7,6 +7,7 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -29,7 +30,7 @@ public class CodeSearchTool {
                 .query(query)
                 .topK(topK > 0 ? topK : 5)
                 .similarityThreshold(0.6)
-                .filterExpression("projectId == '" + projectId + "'")
+                .filterExpression(new FilterExpressionBuilder().eq("projectId", projectId).build())
                 .build();
 
         List<Document> results = vectorStore.similaritySearch(request);

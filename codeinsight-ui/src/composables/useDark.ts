@@ -8,11 +8,7 @@ export function useDark() {
     localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
   })
 
-  return isDark
-}
+  const toggle = () => { isDark.value = !isDark.value }
 
-export function useToggle(isDark: ReturnType<typeof ref<boolean>>) {
-  return () => {
-    isDark.value = !isDark.value
-  }
+  return { isDark, toggle }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted, watch } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { projectApi } from '@/api/project'
 import { conversationApi } from '@/api/conversation'
@@ -48,16 +48,20 @@ async function loadConversations() {
     conversations.value = []
     return
   }
-  const res = await conversationApi.list(selectedProjectId.value)
-  if (res.success) conversations.value = res.data ?? []
+  try {
+    const res = await conversationApi.list(selectedProjectId.value)
+    if (res.success) conversations.value = res.data ?? []
+  } catch { /* error displayed by interceptor */ }
 }
 
 async function loadMessages(convId: string) {
-  const res = await conversationApi.getMessages(convId)
-  if (res.success) {
-    messages.value = res.data ?? []
-    await scrollToBottom()
-  }
+  try {
+    const res = await conversationApi.getMessages(convId)
+    if (res.success) {
+      messages.value = res.data ?? []
+      await scrollToBottom()
+    }
+  } catch { /* error displayed by interceptor */ }
 }
 
 function selectConversation(conv: ConversationResponse) {
@@ -78,14 +82,14 @@ async function handleSend(text: string) {
     return
   }
 
-  // Add user message to UI immediately
-  messages.value.push({
+  // Add user message to UI immediately (immutable update)
+  messages.value = [...messages.value, {
     id: `temp-${Date.now()}`,
     role: 'USER',
     content: text,
     tokenCount: 0,
     createdAt: new Date().toISOString(),
-  })
+  }]
   await scrollToBottom()
 
   sending.value = true
@@ -104,15 +108,15 @@ async function handleSend(text: string) {
       abortController.signal,
     )
 
-    // Finalize streaming message
+    // Finalize streaming message (immutable update)
     if (streamingContent.value) {
-      messages.value.push({
+      messages.value = [...messages.value, {
         id: `ai-${Date.now()}`,
         role: 'ASSISTANT',
         content: streamingContent.value,
         tokenCount: 0,
         createdAt: new Date().toISOString(),
-      })
+      }]
       streamingContent.value = ''
     }
 
@@ -173,6 +177,10 @@ watch(() => selectedProjectId.value, () => {
 onMounted(async () => {
   await loadProjects()
   if (selectedProjectId.value) await loadConversations()
+})
+
+onUnmounted(() => {
+  abortController?.abort()
 })
 </script>
 

@@ -18,8 +18,8 @@ function handleSend() {
   message.value = ''
 }
 
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+function handleKeydown(e: KeyboardEvent | Event) {
+  if (e instanceof KeyboardEvent && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault()
     handleSend()
   }

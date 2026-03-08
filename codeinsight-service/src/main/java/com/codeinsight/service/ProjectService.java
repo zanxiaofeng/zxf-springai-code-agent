@@ -1,5 +1,6 @@
 package com.codeinsight.service;
 
+import com.codeinsight.common.exception.BusinessException;
 import com.codeinsight.common.exception.ResourceNotFoundException;
 import com.codeinsight.model.dto.ProjectCreateRequest;
 import com.codeinsight.model.dto.ProjectResponse;
@@ -52,15 +53,27 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
+    public ProjectResponse getProject(String id, String userId) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", id));
+        if (!project.getOwner().getId().equals(userId)) {
+            throw new BusinessException("Access denied to project: " + id);
+        }
+        return toResponse(project);
+    }
+
+    @Transactional(readOnly = true)
     public Page<ProjectResponse> listProjects(String userId, Pageable pageable) {
         return projectRepository.findByOwnerId(userId, pageable)
                 .map(this::toResponse);
     }
 
     @Transactional
-    public void deleteProject(String id) {
-        if (!projectRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Project", id);
+    public void deleteProject(String id, String userId) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", id));
+        if (!project.getOwner().getId().equals(userId)) {
+            throw new BusinessException("Access denied to project: " + id);
         }
         projectRepository.deleteById(id);
         log.info("Project deleted: id={}", id);

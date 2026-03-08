@@ -1,5 +1,6 @@
 package com.codeinsight.web.controller;
 
+import com.codeinsight.common.constant.AppConstants;
 import com.codeinsight.common.result.ApiResponse;
 import com.codeinsight.common.result.PageMeta;
 import com.codeinsight.indexer.task.IndexingTaskProducer;
@@ -33,8 +34,7 @@ public class ProjectController {
     public ApiResponse<ProjectResponse> createProject(
             @RequestBody @Valid ProjectCreateRequest request,
             @AuthenticationPrincipal UserPrincipal user) {
-        ProjectResponse response = projectService.createProject(request, user.getId());
-        return ApiResponse.ok(response);
+        return ApiResponse.ok(projectService.createProject(request, user.getId()));
     }
 
     @GetMapping
@@ -42,24 +42,31 @@ public class ProjectController {
             @AuthenticationPrincipal UserPrincipal user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<ProjectResponse> result = projectService.listProjects(user.getId(), PageRequest.of(page, size));
-        PageMeta meta = new PageMeta(result.getTotalElements(), page, size);
-        return ApiResponse.ok(result.getContent(), meta);
+        var clampedSize = Math.min(Math.max(size, 1), AppConstants.MAX_PAGE_SIZE);
+        Page<ProjectResponse> result = projectService.listProjects(user.getId(), PageRequest.of(page, clampedSize));
+        return ApiResponse.ok(result.getContent(), new PageMeta(result.getTotalElements(), page, clampedSize));
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<ProjectResponse> getProject(@PathVariable String id) {
-        return ApiResponse.ok(projectService.getProject(id));
+    public ApiResponse<ProjectResponse> getProject(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserPrincipal user) {
+        return ApiResponse.ok(projectService.getProject(id, user.getId()));
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteProject(@PathVariable String id) {
-        projectService.deleteProject(id);
+    public ApiResponse<Void> deleteProject(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserPrincipal user) {
+        projectService.deleteProject(id, user.getId());
         return ApiResponse.ok(null);
     }
 
     @PostMapping("/{id}/index")
-    public ApiResponse<TaskResponse> triggerIndex(@PathVariable String id) {
+    public ApiResponse<TaskResponse> triggerIndex(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserPrincipal user) {
+        projectService.getProject(id, user.getId()); // verify ownership
         projectService.updateIndexStatus(id, com.codeinsight.model.enums.IndexStatus.INDEXING);
         AsyncTask task = asyncTaskService.createTask(id, TaskType.INDEX_FULL);
         indexingTaskProducer.submitIndexTask(task.getId(), id, TaskType.INDEX_FULL);

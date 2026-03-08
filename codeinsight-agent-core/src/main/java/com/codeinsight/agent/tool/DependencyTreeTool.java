@@ -29,7 +29,11 @@ public class DependencyTreeTool {
     public String parseDependencies(
             @ToolParam(description = "Project ID") String projectId) {
 
-        Path pomPath = Path.of(basePath, projectId, "pom.xml");
+        var projectPath = Path.of(basePath, projectId).normalize();
+        if (!projectPath.startsWith(Path.of(basePath).normalize())) {
+            return "Invalid project ID: " + projectId;
+        }
+        Path pomPath = projectPath.resolve("pom.xml");
         if (!Files.exists(pomPath)) {
             return "No pom.xml found in project " + projectId;
         }

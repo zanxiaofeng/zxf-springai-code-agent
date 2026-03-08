@@ -49,7 +49,8 @@ async function handleSubmit() {
       const res = await auth.login(form)
       if (res.success) {
         ElMessage.success('登录成功')
-        const redirect = (route.query.redirect as string) || '/projects'
+        const raw = (route.query.redirect as string) || '/projects'
+        const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/projects'
         router.push(redirect)
       } else {
         ElMessage.error(res.error ?? '登录失败')

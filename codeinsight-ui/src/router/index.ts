@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isTokenExpired } from '@/utils/token'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -27,7 +28,10 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const token = localStorage.getItem('token')
-  if (to.matched.some((r) => r.meta.requiresAuth) && !token) {
+  if (to.matched.some((r) => r.meta.requiresAuth) && (!token || isTokenExpired(token))) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('username')
+    localStorage.removeItem('role')
     return { path: '/login', query: { redirect: to.fullPath } }
   }
 })

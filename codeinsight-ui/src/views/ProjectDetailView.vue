@@ -5,6 +5,7 @@ import { projectApi } from '@/api/project'
 import { taskApi } from '@/api/task'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { ProjectResponse, TaskResponse } from '@/types/api'
+import { statusTagType } from '@/utils/status'
 
 const route = useRoute()
 const router = useRouter()
@@ -43,15 +44,6 @@ function goChat() {
   router.push(`/chat/${projectId}`)
 }
 
-function statusTagType(status: string) {
-  switch (status) {
-    case 'COMPLETED': return 'success'
-    case 'RUNNING': case 'INDEXING': return 'warning'
-    case 'FAILED': return 'danger'
-    case 'CANCELLED': return 'info'
-    default: return 'info'
-  }
-}
 
 onMounted(async () => {
   await Promise.all([loadProject(), loadTasks()])

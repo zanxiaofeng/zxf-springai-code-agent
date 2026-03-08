@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { projectApi } from '@/api/project'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { ProjectResponse, ProjectCreateRequest } from '@/types/api'
+import { statusTagType } from '@/utils/status'
 
 const router = useRouter()
 const projects = ref<ProjectResponse[]>([])
@@ -86,14 +87,6 @@ function goChat(row: ProjectResponse) {
   router.push(`/chat/${row.id}`)
 }
 
-function statusTagType(status: string) {
-  switch (status) {
-    case 'COMPLETED': return 'success'
-    case 'INDEXING': return 'warning'
-    case 'FAILED': return 'danger'
-    default: return 'info'
-  }
-}
 
 function handlePageChange(p: number) {
   page.value = p - 1

@@ -1,5 +1,6 @@
 package com.codeinsight.service;
 
+import com.codeinsight.common.exception.BusinessException;
 import com.codeinsight.common.exception.ResourceNotFoundException;
 import com.codeinsight.model.entity.Conversation;
 import com.codeinsight.model.entity.ConversationMessage;
@@ -67,6 +68,16 @@ public class ConversationService {
     }
 
     @Transactional(readOnly = true)
+    public List<ConversationMessage> getMessages(String conversationId, String userId) {
+        var conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation", conversationId));
+        if (!conversation.getUser().getId().equals(userId)) {
+            throw new BusinessException("Access denied to conversation: " + conversationId);
+        }
+        return messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
+    }
+
+    @Transactional(readOnly = true)
     public List<Conversation> listConversations(String projectId, String userId) {
         return conversationRepository.findByProjectIdAndUserIdOrderByUpdatedAtDesc(projectId, userId);
     }
@@ -75,6 +86,17 @@ public class ConversationService {
     public void deleteConversation(String conversationId) {
         if (!conversationRepository.existsById(conversationId)) {
             throw new ResourceNotFoundException("Conversation", conversationId);
+        }
+        messageRepository.deleteByConversationId(conversationId);
+        conversationRepository.deleteById(conversationId);
+    }
+
+    @Transactional
+    public void deleteConversation(String conversationId, String userId) {
+        var conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation", conversationId));
+        if (!conversation.getUser().getId().equals(userId)) {
+            throw new BusinessException("Access denied to conversation: " + conversationId);
         }
         messageRepository.deleteByConversationId(conversationId);
         conversationRepository.deleteById(conversationId);

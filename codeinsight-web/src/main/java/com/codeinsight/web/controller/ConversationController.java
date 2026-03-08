@@ -32,8 +32,10 @@ public class ConversationController {
     }
 
     @GetMapping("/{id}/messages")
-    public ApiResponse<List<MessageResponse>> getMessages(@PathVariable String id) {
-        var messages = conversationService.getMessages(id)
+    public ApiResponse<List<MessageResponse>> getMessages(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserPrincipal user) {
+        var messages = conversationService.getMessages(id, user.getId())
                 .stream()
                 .map(this::toMessageResponse)
                 .toList();
@@ -41,8 +43,10 @@ public class ConversationController {
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deleteConversation(@PathVariable String id) {
-        conversationService.deleteConversation(id);
+    public ApiResponse<Void> deleteConversation(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserPrincipal user) {
+        conversationService.deleteConversation(id, user.getId());
         return ApiResponse.ok(null);
     }
 

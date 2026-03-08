@@ -29,8 +29,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
-                .toList()
-                .stream().collect(java.util.stream.Collectors.joining(", "));
+                .collect(java.util.stream.Collectors.joining(", "));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(message));
     }
 
