@@ -70,4 +70,13 @@ public class ConversationService {
     public List<Conversation> listConversations(String projectId, String userId) {
         return conversationRepository.findByProjectIdAndUserIdOrderByUpdatedAtDesc(projectId, userId);
     }
+
+    @Transactional
+    public void deleteConversation(String conversationId) {
+        if (!conversationRepository.existsById(conversationId)) {
+            throw new ResourceNotFoundException("Conversation", conversationId);
+        }
+        messageRepository.deleteByConversationId(conversationId);
+        conversationRepository.deleteById(conversationId);
+    }
 }

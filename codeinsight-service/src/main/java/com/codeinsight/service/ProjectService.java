@@ -34,7 +34,7 @@ public class ProjectService {
                 .description(request.description())
                 .sourceType(request.sourceType())
                 .gitUrl(request.gitUrl())
-                .gitBranch(request.gitBranch() != null ? request.gitBranch() : "main")
+                .gitBranch(org.apache.commons.lang3.ObjectUtils.defaultIfNull(request.gitBranch(), "main"))
                 .indexStatus(IndexStatus.PENDING)
                 .owner(owner)
                 .build();

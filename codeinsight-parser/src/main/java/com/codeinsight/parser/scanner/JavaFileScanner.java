@@ -8,10 +8,13 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @Slf4j
 public class JavaFileScanner {
+
+    private static final Set<String> SKIP_DIRS = Set.of(".git", "target", "build", "node_modules", ".idea");
 
     public List<Path> scan(Path rootDir) throws IOException {
         List<Path> javaFiles = new ArrayList<>();
@@ -28,7 +31,7 @@ public class JavaFileScanner {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 String dirName = dir.getFileName().toString();
-                if (dirName.equals(".git") || dirName.equals("target") || dirName.equals("build") || dirName.equals("node_modules")) {
+                if (SKIP_DIRS.contains(dirName)) {
                     return FileVisitResult.SKIP_SUBTREE;
                 }
                 return FileVisitResult.CONTINUE;

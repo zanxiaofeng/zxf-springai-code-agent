@@ -24,4 +24,9 @@ public class TaskController {
     public ApiResponse<List<TaskResponse>> listTasks(@RequestParam String projectId) {
         return ApiResponse.ok(asyncTaskService.listTasksByProject(projectId));
     }
+
+    @PostMapping("/{id}/cancel")
+    public ApiResponse<TaskResponse> cancelTask(@PathVariable String id) {
+        return ApiResponse.ok(asyncTaskService.cancelTask(id));
+    }
 }

@@ -1,9 +1,9 @@
 package com.codeinsight.common.constant;
 
-public final class AppConstants {
+import lombok.experimental.UtilityClass;
 
-    private AppConstants() {
-    }
+@UtilityClass
+public class AppConstants {
 
     public static final String API_PREFIX = "/api/v1";
     public static final String AUTH_PREFIX = API_PREFIX + "/auth";

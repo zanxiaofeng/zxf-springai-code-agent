@@ -22,31 +22,37 @@ public class OrchestratorService {
     private final CodeGenAgent codeGenAgent;
     private final DependencyAgent dependencyAgent;
     private final SecurityAgent securityAgent;
+    private final ChatPersistence chatPersistence;
 
     public Flux<ChatEvent> chat(ChatRequest request, String userId) {
-        ScenarioType scenario = request.scenario() != null ? request.scenario() : ScenarioType.QA;
-        String conversationId = request.conversationId() != null
-                ? request.conversationId()
-                : java.util.UUID.randomUUID().toString();
-        String projectId = request.projectId();
-        String message = request.message();
+        var scenario = request.scenario() != null ? request.scenario() : ScenarioType.QA;
+        var projectId = request.projectId();
+        var message = request.message();
 
-        String agentName = resolveAgentName(scenario);
-        String model = resolveModel(scenario);
+        var conversationId = chatPersistence.ensureConversation(
+                request.conversationId(), projectId, userId, scenario, message);
+        chatPersistence.saveUserMessage(conversationId, message);
 
-        log.info("Chat request: scenario={}, agent={}, projectId={}, userId={}", scenario, agentName, projectId, userId);
+        var agentName = resolveAgentName(scenario);
+        var model = resolveModel(scenario);
 
-        Flux<ChatEvent> metadata = Flux.just(ChatEvent.metadata(Map.of(
+        log.info("Chat request: scenario={}, agent={}, conversationId={}, projectId={}, userId={}",
+                scenario, agentName, conversationId, projectId, userId);
+
+        var metadata = Flux.just(ChatEvent.metadata(Map.of(
                 "conversationId", conversationId,
                 "agentName", agentName,
                 "model", model,
                 "scenario", scenario.name()
         )));
 
-        Flux<ChatEvent> content = routeToAgent(scenario, projectId, message, conversationId)
-                .map(ChatEvent::content);
+        var responseCollector = new StringBuilder();
+        var content = routeToAgent(scenario, projectId, message, conversationId)
+                .doOnNext(responseCollector::append)
+                .map(ChatEvent::content)
+                .doOnComplete(() -> chatPersistence.saveAssistantMessage(conversationId, responseCollector.toString()));
 
-        Flux<ChatEvent> done = Flux.just(ChatEvent.done(Map.of("status", "completed")));
+        var done = Flux.just(ChatEvent.done(Map.of("status", "completed")));
 
         return Flux.concat(metadata, content, done)
                 .onErrorResume(e -> {

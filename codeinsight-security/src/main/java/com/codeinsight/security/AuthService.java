@@ -45,7 +45,7 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.username())
+        var user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new BusinessException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
@@ -59,13 +59,22 @@ public class AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
 
-        String token = tokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole().name());
+        return buildLoginResponse(user);
+    }
 
-        return new LoginResponse(
-                token,
-                tokenProvider.getExpirationMs() / 1000,
-                user.getUsername(),
-                user.getRole().name()
-        );
+    public LoginResponse refreshToken(String userId) {
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("User not found"));
+
+        if (!user.getEnabled()) {
+            throw new BusinessException("Account is disabled");
+        }
+
+        return buildLoginResponse(user);
+    }
+
+    private LoginResponse buildLoginResponse(User user) {
+        var token = tokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole().name());
+        return new LoginResponse(token, tokenProvider.getExpirationMs() / 1000, user.getUsername(), user.getRole().name());
     }
 }

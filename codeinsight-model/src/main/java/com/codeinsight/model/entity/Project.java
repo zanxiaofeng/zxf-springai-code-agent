@@ -72,9 +72,7 @@ public class Project {
 
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+        this.createdAt = this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate

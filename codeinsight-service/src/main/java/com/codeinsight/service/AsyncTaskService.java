@@ -61,6 +61,20 @@ public class AsyncTaskService {
         return toResponse(task);
     }
 
+    @Transactional
+    public TaskResponse cancelTask(String taskId) {
+        var task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("AsyncTask", taskId));
+        if (task.getStatus() == TaskStatus.COMPLETED || task.getStatus() == TaskStatus.FAILED) {
+            throw new com.codeinsight.common.exception.BusinessException(
+                    "Cannot cancel task in %s status".formatted(task.getStatus()));
+        }
+        task.setStatus(TaskStatus.CANCELLED);
+        task.setCompletedAt(LocalDateTime.now());
+        task.setProgressMessage("Cancelled by user");
+        return toResponse(taskRepository.save(task));
+    }
+
     @Transactional(readOnly = true)
     public List<TaskResponse> listTasksByProject(String projectId) {
         return taskRepository.findByProjectIdOrderByCreatedAtDesc(projectId)
