@@ -1,0 +1,131 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Chat Requests / min",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "targets": [
+        {
+          "expr": "rate(codeinsight_chat_requests_total[1m]) * 60",
+          "legendFormat": "{{scenario}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "fillOpacity": 15 },
+          "unit": "reqps"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "AI Model Call Latency (P95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(codeinsight_model_call_duration_seconds_bucket[5m]))",
+          "legendFormat": "{{model}} p95"
+        },
+        {
+          "expr": "histogram_quantile(0.50, rate(codeinsight_model_call_duration_seconds_bucket[5m]))",
+          "legendFormat": "{{model}} p50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "fillOpacity": 10 },
+          "unit": "s"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "Active Indexing Tasks",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "codeinsight_indexing_active", "legendFormat": "Active" }
+      ],
+      "fieldConfig": {
+        "defaults": { "thresholds": { "steps": [
+          { "value": 0, "color": "green" },
+          { "value": 3, "color": "yellow" },
+          { "value": 5, "color": "red" }
+        ]}}
+      }
+    },
+    {
+      "title": "Indexing Duration (avg)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+      "targets": [
+        { "expr": "rate(codeinsight_indexing_duration_seconds_sum[5m]) / rate(codeinsight_indexing_duration_seconds_count[5m])", "legendFormat": "avg" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "AI Token Usage / min",
+      "type": "timeseries",
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "rate(codeinsight_ai_tokens_total[1m]) * 60", "legendFormat": "{{type}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "title": "JVM Heap Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        { "expr": "jvm_memory_used_bytes{area=\"heap\"}", "legendFormat": "Used" },
+        { "expr": "jvm_memory_committed_bytes{area=\"heap\"}", "legendFormat": "Committed" },
+        { "expr": "jvm_memory_max_bytes{area=\"heap\"}", "legendFormat": "Max" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } }
+    },
+    {
+      "title": "HTTP Request Rate by Status",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        { "expr": "rate(http_server_requests_seconds_count[1m]) * 60", "legendFormat": "{{method}} {{uri}} {{status}}" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "title": "HTTP Response Time (P95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m]))", "legendFormat": "{{method}} {{uri}} p95" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "Database Connection Pool",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "targets": [
+        { "expr": "hikaricp_connections_active", "legendFormat": "Active" },
+        { "expr": "hikaricp_connections_idle", "legendFormat": "Idle" },
+        { "expr": "hikaricp_connections_max", "legendFormat": "Max" },
+        { "expr": "hikaricp_connections_pending", "legendFormat": "Pending" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["codeinsight"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "CodeInsight Agent Overview",
+  "uid": "codeinsight-overview"
+}

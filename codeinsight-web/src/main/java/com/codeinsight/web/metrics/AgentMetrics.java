@@ -4,6 +4,7 @@ import com.codeinsight.model.enums.ScenarioType;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -54,5 +55,20 @@ public class AgentMetrics {
                 .description("Indexing pipeline duration")
                 .register(registry)
                 .record(java.time.Duration.ofMillis(durationMs));
+    }
+
+    public void recordTokenUsage(String type, long count) {
+        Counter.builder("codeinsight.ai.tokens")
+                .tag("type", type)
+                .description("AI token usage")
+                .register(registry).increment(count);
+    }
+
+    public void recordChatError(ScenarioType scenario, String errorType) {
+        Counter.builder("codeinsight.chat.errors")
+                .tag("scenario", scenario.name())
+                .tag("error", errorType)
+                .description("Chat request errors")
+                .register(registry).increment();
     }
 }
