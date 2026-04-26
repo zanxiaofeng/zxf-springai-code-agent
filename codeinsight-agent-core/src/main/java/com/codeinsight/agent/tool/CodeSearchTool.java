@@ -26,14 +26,18 @@ public class CodeSearchTool {
             @ToolParam(description = "Project ID") String projectId,
             @ToolParam(description = "Number of results, default 5") int topK) {
 
+        int k = topK > 0 ? topK : 5;
+        log.debug("searchCode: query='{}', projectId={}, topK={}", query, projectId, k);
+
         SearchRequest request = SearchRequest.builder()
                 .query(query)
-                .topK(topK > 0 ? topK : 5)
+                .topK(k)
                 .similarityThreshold(0.6)
                 .filterExpression(new FilterExpressionBuilder().eq("projectId", projectId).build())
                 .build();
 
         List<Document> results = vectorStore.similaritySearch(request);
+        log.debug("searchCode: found {} results for query='{}'", results.size(), query);
 
         if (results.isEmpty()) {
             return "No relevant code found for query: " + query;
@@ -45,6 +49,7 @@ public class CodeSearchTool {
                     String className = String.valueOf(doc.getMetadata().get("className"));
                     String methodName = String.valueOf(doc.getMetadata().getOrDefault("methodName", ""));
                     int startLine = Integer.parseInt(String.valueOf(doc.getMetadata().getOrDefault("startLine", "0")));
+                    log.debug("searchCode result: {}:{} ({}.{}) - score={}", filePath, startLine, className, methodName, doc.getMetadata().get("distance"));
 
                     return String.format("### %s:%d (%s.%s)\n```java\n%s\n```",
                             filePath, startLine, className, methodName, doc.getText());

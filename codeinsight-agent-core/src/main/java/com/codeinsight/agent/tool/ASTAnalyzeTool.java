@@ -32,6 +32,7 @@ public class ASTAnalyzeTool {
             @ToolParam(description = "Qualified class name, e.g. com.example.OrderService") String qualifiedClassName,
             @ToolParam(description = "Project ID") String projectId) {
 
+        log.debug("analyzeClass: class={}, projectId={}", qualifiedClassName, projectId);
         Path projectPath = resolveProjectPath(projectId);
         String relativePath = qualifiedClassName.replace('.', '/') + ".java";
 
@@ -40,14 +41,18 @@ public class ASTAnalyzeTool {
                 .toList();
 
         if (candidates.isEmpty()) {
+            log.warn("analyzeClass: class not found: {}", qualifiedClassName);
             return "Class not found: " + qualifiedClassName;
         }
 
+        log.debug("analyzeClass: found {} candidate file(s) for {}", candidates.size(), qualifiedClassName);
         Optional<ParsedClass> parsedOpt = astParser.parse(candidates.getFirst());
         if (parsedOpt.isEmpty()) {
+            log.warn("analyzeClass: failed to parse: {}", qualifiedClassName);
             return "Failed to parse: " + qualifiedClassName;
         }
 
+        log.debug("analyzeClass: parsed {} successfully ({} methods)", qualifiedClassName, parsedOpt.get().getMethods().size());
         return formatClassAnalysis(parsedOpt.get());
     }
 
@@ -57,6 +62,7 @@ public class ASTAnalyzeTool {
             @ToolParam(description = "Qualified class name") String qualifiedClassName,
             @ToolParam(description = "Project ID") String projectId) {
 
+        log.debug("getMethodInfo: method={}, class={}, projectId={}", methodName, qualifiedClassName, projectId);
         Path projectPath = resolveProjectPath(projectId);
         String relativePath = qualifiedClassName.replace('.', '/') + ".java";
 
@@ -65,19 +71,24 @@ public class ASTAnalyzeTool {
                 .toList();
 
         if (candidates.isEmpty()) {
+            log.warn("getMethodInfo: class not found: {}", qualifiedClassName);
             return "Class not found: " + qualifiedClassName;
         }
 
         Optional<ParsedClass> parsedOpt = astParser.parse(candidates.getFirst());
         if (parsedOpt.isEmpty()) {
+            log.warn("getMethodInfo: failed to parse: {}", qualifiedClassName);
             return "Failed to parse: " + qualifiedClassName;
         }
 
-        return parsedOpt.get().getMethods().stream()
+        var result = parsedOpt.get().getMethods().stream()
                 .filter(m -> m.getName().equals(methodName))
                 .findFirst()
                 .map(this::formatMethodDetail)
                 .orElse("Method not found: " + methodName + " in " + qualifiedClassName);
+        log.debug("getMethodInfo: result for {}:{} - {}", qualifiedClassName, methodName,
+                result.startsWith("Method not found") ? "not found" : "ok");
+        return result;
     }
 
     private String formatClassAnalysis(ParsedClass cls) {

@@ -29,12 +29,14 @@ public class DependencyTreeTool {
     public String parseDependencies(
             @ToolParam(description = "Project ID") String projectId) {
 
+        log.debug("parseDependencies: projectId={}", projectId);
         var projectPath = Path.of(basePath, projectId).normalize();
         if (!projectPath.startsWith(Path.of(basePath).normalize())) {
             return "Invalid project ID: " + projectId;
         }
         Path pomPath = projectPath.resolve("pom.xml");
         if (!Files.exists(pomPath)) {
+            log.warn("parseDependencies: no pom.xml found for project {}", projectId);
             return "No pom.xml found in project " + projectId;
         }
 
@@ -66,9 +68,11 @@ public class DependencyTreeTool {
             }
 
             if (deps.isEmpty()) {
+                log.debug("parseDependencies: no dependencies declared in pom.xml");
                 return "No dependencies declared in pom.xml";
             }
 
+            log.debug("parseDependencies: found {} dependencies for project {}", deps.size(), projectId);
             return "## Dependencies for project " + projectId + "\n\n" + String.join("\n", deps);
         } catch (Exception e) {
             log.error("Failed to parse pom.xml for project {}: {}", projectId, e.getMessage());

@@ -1,5 +1,7 @@
 logging:
   level:
     com.codeinsight: DEBUG
-    org.springframework.ai: ERROR
+    com.alibaba.cloud.ai: DEBUG
+    org.springframework.ai: DEBUG
+    reactor.netty.http.client: ERROR
     org.hibernate.SQL: ERROR

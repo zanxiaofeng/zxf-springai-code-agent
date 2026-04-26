@@ -36,12 +36,14 @@ public class IndexingPipeline {
     private final ProjectRepository projectRepository;
 
     public void execute(String projectId, TaskType taskType, BiConsumer<Integer, String> progressCallback) throws IOException, GitAPIException {
+        log.info("Starting indexing pipeline: projectId={}, taskType={}", projectId, taskType);
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new IOException("Project not found: " + projectId));
 
         progressCallback.accept(2, "Resolving source...");
         Path repoPath = codeSourceResolver.resolve(
                 project.getSourceType(), projectId, project.getGitUrl(), project.getGitBranch());
+        log.info("Resolved source path: {} (sourceType={})", repoPath, project.getSourceType());
 
         progressCallback.accept(5, "Scanning Java files...");
         List<Path> javaFiles = fileScanner.scan(repoPath);
@@ -51,10 +53,13 @@ public class IndexingPipeline {
         progressCallback.accept(10, "Parsing " + totalFiles + " Java files...");
         List<CodeChunk> allChunks = new ArrayList<>();
         int processed = 0;
+        int parsedOk = 0;
+        int parseFail = 0;
 
         for (Path file : javaFiles) {
             Optional<ParsedClass> parsedClass = astParser.parse(file);
             if (parsedClass.isPresent()) {
+                parsedOk++;
                 String relativePath = repoPath.relativize(file).toString();
                 String source;
                 try {
@@ -65,6 +70,9 @@ public class IndexingPipeline {
                 }
                 List<CodeChunk> chunks = chunker.chunkJavaFile(relativePath, source, parsedClass.get());
                 allChunks.addAll(chunks);
+            } else {
+                parseFail++;
+                log.debug("Skipped file (parse failed or not a class): {}", file.getFileName());
             }
 
             processed++;
@@ -73,6 +81,8 @@ public class IndexingPipeline {
                 progressCallback.accept(percent, "Parsed " + processed + "/" + totalFiles + " files");
             }
         }
+
+        log.info("Parsing complete: {} parsed, {} skipped, {} chunks generated", parsedOk, parseFail, allChunks.size());
 
         progressCallback.accept(75, "Embedding " + allChunks.size() + " code chunks...");
         embeddingService.embedAndStore(allChunks, projectId);

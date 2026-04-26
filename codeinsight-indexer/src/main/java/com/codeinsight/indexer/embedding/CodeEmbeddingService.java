@@ -19,19 +19,21 @@ public class CodeEmbeddingService {
     private final VectorStore vectorStore;
 
     public void embedAndStore(List<CodeChunk> chunks, String projectId) {
+        log.info("Starting embedding: {} chunks for project {}", chunks.size(), projectId);
         List<Document> documents = chunks.stream()
                 .map(chunk -> toDocument(chunk, projectId))
                 .toList();
 
         int batchSize = 10;
+        int totalBatches = (documents.size() + batchSize - 1) / batchSize;
         for (int i = 0; i < documents.size(); i += batchSize) {
             int end = Math.min(i + batchSize, documents.size());
             List<Document> batch = documents.subList(i, end);
             vectorStore.add(batch);
-            log.debug("Stored batch {}-{} of {} documents", i, end, documents.size());
+            log.debug("Stored batch {}/{} ({}-{} of {} documents)", (i / batchSize) + 1, totalBatches, i, end, documents.size());
         }
 
-        log.info("Embedded and stored {} chunks for project {}", chunks.size(), projectId);
+        log.info("Embedded and stored {} chunks in {} batches for project {}", documents.size(), totalBatches, projectId);
     }
 
     private Document toDocument(CodeChunk chunk, String projectId) {

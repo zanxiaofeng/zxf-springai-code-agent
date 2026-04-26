@@ -69,14 +69,16 @@ public class IndexingTaskConsumer implements InitializingBean {
         String projectId = taskData.get("projectId");
         TaskType taskType = TaskType.valueOf(taskData.get("taskType"));
 
+        log.info("Processing indexing task: taskId={}, projectId={}, taskType={}", taskId, projectId, taskType);
         taskStatusUpdater.onRunning(taskId, 0, "Starting indexing...");
 
         try {
             indexingPipeline.execute(projectId, taskType, (percent, msg) ->
                     taskStatusUpdater.onRunning(taskId, percent, msg));
             taskStatusUpdater.onCompleted(taskId);
+            log.info("Indexing task completed: taskId={}, projectId={}", taskId, projectId);
         } catch (Exception e) {
-            log.error("Indexing failed for project {}: {}", projectId, e.getMessage(), e);
+            log.error("Indexing failed for project {} (taskId={}): {}", projectId, taskId, e.getMessage(), e);
             taskStatusUpdater.onFailed(taskId, e.getMessage());
         }
     }

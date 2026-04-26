@@ -29,6 +29,6 @@ public class IndexingTaskProducer {
         redisTemplate.opsForStream().add(
                 StreamRecords.string(message).withStreamKey(AppConstants.REDIS_STREAM_INDEXING));
 
-        log.info("Submitted indexing task: taskId={}, projectId={}", taskId, projectId);
+        log.info("Submitted indexing task: taskId={}, projectId={}, taskType={}", taskId, projectId, taskType);
     }
 }
