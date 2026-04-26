@@ -34,8 +34,25 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, authEx) -> {
+                            if (!res.isCommitted()) {
+                                res.setStatus(401);
+                                res.setContentType("application/json");
+                                res.getWriter().write("{\"success\":false,\"error\":\"Unauthorized\"}");
+                            }
+                        })
+                        .accessDeniedHandler((req, res, accessEx) -> {
+                            if (!res.isCommitted()) {
+                                res.setStatus(403);
+                                res.setContentType("application/json");
+                                res.getWriter().write("{\"success\":false,\"error\":\"Access Denied\"}");
+                            }
+                        })
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

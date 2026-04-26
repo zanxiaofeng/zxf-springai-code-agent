@@ -46,7 +46,7 @@ async function handleSubmit() {
         ElMessage.error(res.error ?? '注册失败')
       }
     } else {
-      const res = await auth.login(form)
+      const res = await auth.login({ username: form.username, password: form.password })
       if (res.success) {
         ElMessage.success('登录成功')
         const raw = (route.query.redirect as string) || '/projects'

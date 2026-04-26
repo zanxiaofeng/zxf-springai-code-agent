@@ -1,15 +1,18 @@
 package com.codeinsight.web.metrics;
 
-import com.codeinsight.model.enums.ScenarioType;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Custom business metrics for CodeInsight.
+ * Spring AI auto-configures gen_ai.* metrics (model call duration, token usage)
+ * via ObservationRegistry, so we only track application-specific metrics here.
+ */
 @Component
 @Slf4j
 public class AgentMetrics {
@@ -19,27 +22,7 @@ public class AgentMetrics {
 
     public AgentMetrics(MeterRegistry registry) {
         this.registry = registry;
-
-        this.activeIndexingTasks = registry.gauge("codeinsight.indexing.active",
-                new AtomicInteger(0));
-    }
-
-    public void recordChatRequest(ScenarioType scenario) {
-        Counter.builder("codeinsight.chat.requests")
-                .tag("scenario", scenario.name())
-                .description("Total chat requests")
-                .register(registry).increment();
-    }
-
-    public Timer.Sample startModelCall() {
-        return Timer.start(registry);
-    }
-
-    public void stopModelCall(Timer.Sample sample, String model) {
-        sample.stop(Timer.builder("codeinsight.model.call.duration")
-                .tag("model", model)
-                .description("AI model call duration")
-                .register(registry));
+        this.activeIndexingTasks = registry.gauge("codeinsight.indexing.active", new AtomicInteger(0));
     }
 
     public void incrementActiveIndexing() {
@@ -52,23 +35,9 @@ public class AgentMetrics {
 
     public void recordIndexingComplete(String projectId, long durationMs) {
         Timer.builder("codeinsight.indexing.duration")
+                .tag("projectId", projectId)
                 .description("Indexing pipeline duration")
                 .register(registry)
-                .record(java.time.Duration.ofMillis(durationMs));
-    }
-
-    public void recordTokenUsage(String type, long count) {
-        Counter.builder("codeinsight.ai.tokens")
-                .tag("type", type)
-                .description("AI token usage")
-                .register(registry).increment(count);
-    }
-
-    public void recordChatError(ScenarioType scenario, String errorType) {
-        Counter.builder("codeinsight.chat.errors")
-                .tag("scenario", scenario.name())
-                .tag("error", errorType)
-                .description("Chat request errors")
-                .register(registry).increment();
+                .record(Duration.ofMillis(durationMs));
     }
 }

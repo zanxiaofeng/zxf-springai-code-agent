@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { projectApi } from '@/api/project'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { UploadFile } from 'element-plus'
 import type { ProjectResponse, ProjectCreateRequest } from '@/types/api'
 import { statusTagType } from '@/utils/status'
 
@@ -22,6 +23,7 @@ const createForm = ref<ProjectCreateRequest>({
   gitUrl: '',
   gitBranch: 'main',
 })
+const archiveFile = ref<File | null>(null)
 
 async function loadProjects() {
   loading.value = true
@@ -41,17 +43,28 @@ async function handleCreate() {
     ElMessage.warning('请输入项目名称')
     return
   }
+  if (createForm.value.sourceType === 'ARCHIVE' && !archiveFile.value) {
+    ElMessage.warning('请选择归档文件')
+    return
+  }
   createLoading.value = true
   try {
     const res = await projectApi.create(createForm.value)
-    if (res.success) {
-      ElMessage.success('项目创建成功')
-      dialogVisible.value = false
-      resetForm()
-      await loadProjects()
-    } else {
+    if (!res.success) {
       ElMessage.error(res.error ?? '创建失败')
+      return
     }
+    if (createForm.value.sourceType === 'ARCHIVE' && archiveFile.value && res.data) {
+      const uploadRes = await projectApi.uploadArchive(res.data.id, archiveFile.value)
+      if (!uploadRes.success) {
+        ElMessage.error(uploadRes.error ?? '文件上传失败')
+        return
+      }
+    }
+    ElMessage.success('项目创建成功')
+    dialogVisible.value = false
+    resetForm()
+    await loadProjects()
   } finally {
     createLoading.value = false
   }
@@ -59,6 +72,7 @@ async function handleCreate() {
 
 function resetForm() {
   createForm.value = { name: '', description: '', sourceType: 'GIT', gitUrl: '', gitBranch: 'main' }
+  archiveFile.value = null
 }
 
 async function handleDelete(row: ProjectResponse) {
@@ -168,6 +182,22 @@ onMounted(loadProjects)
           </el-form-item>
           <el-form-item label="分支">
             <el-input v-model="createForm.gitBranch" placeholder="main" />
+          </el-form-item>
+        </template>
+        <template v-if="createForm.sourceType === 'ARCHIVE'">
+          <el-form-item label="归档文件">
+            <el-upload
+              :auto-upload="false"
+              :limit="1"
+              :on-change="(f: UploadFile) => archiveFile = f.raw ?? null"
+              :on-remove="() => archiveFile = null"
+              accept=".zip,.tar.gz,.tgz,.gz"
+            >
+              <el-button type="primary">选择文件</el-button>
+              <template #tip>
+                <div class="el-upload__tip">支持 .zip、.tar.gz、.tgz 格式</div>
+              </template>
+            </el-upload>
           </el-form-item>
         </template>
       </el-form>

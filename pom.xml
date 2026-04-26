@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.11</version>
+        <version>3.5.10</version>
         <relativePath/>
     </parent>
 
@@ -34,7 +34,7 @@
 
         <!-- Spring AI -->
         <spring-ai.version>1.1.2</spring-ai.version>
-        <spring-ai-alibaba.version>1.1.2.1</spring-ai-alibaba.version>
+        <spring-ai-alibaba.version>1.1.2.2</spring-ai-alibaba.version>
 
         <!-- Code Parsing -->
         <javaparser.version>3.26.4</javaparser.version>

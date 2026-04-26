@@ -23,6 +23,7 @@ public class OrchestratorService {
     private final DependencyAgent dependencyAgent;
     private final SecurityAgent securityAgent;
     private final ChatPersistence chatPersistence;
+    private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
     public Flux<ChatEvent> chat(ChatRequest request, String userId) {
         var scenario = request.scenario() != null ? request.scenario() : ScenarioType.QA;
@@ -38,6 +39,8 @@ public class OrchestratorService {
 
         log.info("Chat request: scenario={}, agent={}, conversationId={}, projectId={}, userId={}",
                 scenario, agentName, conversationId, projectId, userId);
+
+        recordChatRequest(scenario);
 
         var metadata = Flux.just(ChatEvent.metadata(Map.of(
                 "conversationId", conversationId,
@@ -57,6 +60,7 @@ public class OrchestratorService {
         return Flux.concat(metadata, content, done)
                 .onErrorResume(e -> {
                     log.error("Chat error: {}", e.getMessage(), e);
+                    recordChatError(scenario, e);
                     return Flux.just(ChatEvent.error(e.getMessage()));
                 });
     }
@@ -88,5 +92,19 @@ public class OrchestratorService {
             case QA -> "qwen-turbo";
             case REVIEW, ARCHITECTURE, CODEGEN, DEPENDENCY, SECURITY -> "qwen-max";
         };
+    }
+
+    private void recordChatRequest(ScenarioType scenario) {
+        io.micrometer.core.instrument.Counter.builder("codeinsight.chat.requests")
+                .tag("scenario", scenario.name())
+                .register(meterRegistry).increment();
+    }
+
+    private void recordChatError(ScenarioType scenario, Throwable e) {
+        var errorType = e.getClass().getSimpleName();
+        io.micrometer.core.instrument.Counter.builder("codeinsight.chat.errors")
+                .tag("scenario", scenario.name())
+                .tag("error", errorType)
+                .register(meterRegistry).increment();
     }
 }

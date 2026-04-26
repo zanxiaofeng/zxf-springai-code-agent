@@ -3,13 +3,16 @@ package com.codeinsight.indexer.pipeline;
 import com.codeinsight.indexer.embedding.CodeEmbeddingService;
 import com.codeinsight.model.code.CodeChunk;
 import com.codeinsight.model.code.ParsedClass;
+import com.codeinsight.model.entity.Project;
 import com.codeinsight.model.enums.TaskType;
+import com.codeinsight.model.repository.ProjectRepository;
+import com.codeinsight.parser.CodeSourceResolver;
 import com.codeinsight.parser.ast.JavaASTParser;
 import com.codeinsight.parser.chunker.JavaCodeChunker;
 import com.codeinsight.parser.scanner.JavaFileScanner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -29,12 +32,16 @@ public class IndexingPipeline {
     private final JavaASTParser astParser;
     private final JavaCodeChunker chunker;
     private final CodeEmbeddingService embeddingService;
+    private final CodeSourceResolver codeSourceResolver;
+    private final ProjectRepository projectRepository;
 
-    @Value("${codeinsight.repo.base-path:./data/repos}")
-    private String basePath;
+    public void execute(String projectId, TaskType taskType, BiConsumer<Integer, String> progressCallback) throws IOException, GitAPIException {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new IOException("Project not found: " + projectId));
 
-    public void execute(String projectId, TaskType taskType, BiConsumer<Integer, String> progressCallback) throws IOException {
-        Path repoPath = Path.of(basePath, projectId);
+        progressCallback.accept(2, "Resolving source...");
+        Path repoPath = codeSourceResolver.resolve(
+                project.getSourceType(), projectId, project.getGitUrl(), project.getGitBranch());
 
         progressCallback.accept(5, "Scanning Java files...");
         List<Path> javaFiles = fileScanner.scan(repoPath);

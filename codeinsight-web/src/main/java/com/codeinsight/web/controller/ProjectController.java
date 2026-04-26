@@ -9,6 +9,7 @@ import com.codeinsight.model.dto.ProjectResponse;
 import com.codeinsight.model.dto.TaskResponse;
 import com.codeinsight.model.entity.AsyncTask;
 import com.codeinsight.model.enums.TaskType;
+import com.codeinsight.parser.git.ArchiveExtractService;
 import com.codeinsight.security.jwt.UserPrincipal;
 import com.codeinsight.service.AsyncTaskService;
 import com.codeinsight.service.ProjectService;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -29,6 +31,7 @@ public class ProjectController {
     private final ProjectService projectService;
     private final AsyncTaskService asyncTaskService;
     private final IndexingTaskProducer indexingTaskProducer;
+    private final ArchiveExtractService archiveExtractService;
 
     @PostMapping
     public ApiResponse<ProjectResponse> createProject(
@@ -71,5 +74,15 @@ public class ProjectController {
         AsyncTask task = asyncTaskService.createTask(id, TaskType.INDEX_FULL);
         indexingTaskProducer.submitIndexTask(task.getId(), id, TaskType.INDEX_FULL);
         return ApiResponse.ok(asyncTaskService.getTask(task.getId()));
+    }
+
+    @PostMapping("/{id}/archive")
+    public ApiResponse<ProjectResponse> uploadArchive(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserPrincipal user) throws Exception {
+        ProjectResponse project = projectService.getProject(id, user.getId());
+        archiveExtractService.extract(file.getInputStream(), id, file.getOriginalFilename());
+        return ApiResponse.ok(project);
     }
 }

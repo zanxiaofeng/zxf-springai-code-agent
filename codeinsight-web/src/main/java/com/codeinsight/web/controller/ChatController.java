@@ -30,6 +30,11 @@ public class ChatController {
                 .map(event -> ServerSentEvent.<String>builder()
                         .event(event.type())
                         .data(event.toJson())
-                        .build());
+                        .build())
+                .onErrorResume(e -> Flux.just(
+                        ServerSentEvent.<String>builder()
+                                .event("error")
+                                .data("{\"type\":\"error\",\"message\":\"" + e.getMessage().replace("\"", "'") + "\"}")
+                                .build()));
     }
 }

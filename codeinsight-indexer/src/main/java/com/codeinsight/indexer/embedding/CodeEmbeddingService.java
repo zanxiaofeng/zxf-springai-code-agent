@@ -23,7 +23,7 @@ public class CodeEmbeddingService {
                 .map(chunk -> toDocument(chunk, projectId))
                 .toList();
 
-        int batchSize = 20;
+        int batchSize = 10;
         for (int i = 0; i < documents.size(); i += batchSize) {
             int end = Math.min(i + batchSize, documents.size());
             List<Document> batch = documents.subList(i, end);

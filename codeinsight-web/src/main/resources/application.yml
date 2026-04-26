@@ -1,4 +1,11 @@
+server:
+  port: 8080
+
 spring:
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
   application:
     name: codeinsight-agent
   profiles:
@@ -10,7 +17,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/codeinsight
     username: codeinsight
-    password: ${DB_PASSWORD:codeinsight_dev}
+    password: codeinsight_dev
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -38,27 +45,32 @@ spring:
 
   ai:
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY:sk-placeholder}
+      base-url: https://dashscope.aliyuncs.com
+      api-key: sk-2fd1c2f768d645b3afbb7ec3bcee7424
+      embedding:
+        options:
+          model: text-embedding-v4
+
+    chat:
+      observations:
+        include-prompt: true
+        include-completion: true
+
     vectorstore:
       elasticsearch:
         index-name: code_vectors
         dimensions: 1024
         similarity: cosine
-
-  servlet:
-    multipart:
-      max-file-size: 500MB
-      max-request-size: 500MB
+        initialize-schema: true
+      observations:
+        include-query-response: true
 
 codeinsight:
   repo:
     base-path: ./data/repos
   jwt:
-    secret: ${JWT_SECRET:codeinsight-dev-secret-key-must-be-at-least-256-bits-long-for-security}
+    secret: codeinsight-dev-secret-key-must-be-at-least-256-bits-long-for-security
     expiration-ms: 86400000
-
-server:
-  port: 8080
 
 management:
   endpoints:

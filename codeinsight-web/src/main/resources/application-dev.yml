@@ -1,12 +1,5 @@
-spring:
-  jpa:
-    properties:
-      hibernate:
-        format_sql: true
-    show-sql: false
-
 logging:
   level:
     com.codeinsight: DEBUG
-    org.springframework.ai: DEBUG
-    org.hibernate.SQL: DEBUG
+    org.springframework.ai: ERROR
+    org.hibernate.SQL: ERROR
